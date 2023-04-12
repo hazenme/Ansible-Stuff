@@ -1,0 +1,61 @@
+- connection: httpapi
+  hosts: Fortigates
+  collections:
+  - fortinet.fortios
+  vars:
+   vdom: "root"
+   ansible_httpapi_use_ssl: yes
+   ansible_httpapi_validate_certs: no
+   ansible_httpapi_port: 443
+  tasks:
+   - name: Backup a virtual domain.
+     fortios_monitor_fact:
+        selector: 'system_config_backup'
+        vdom: 'root'
+        access_token: "[API_token]"
+        params:
+            scope: 'global'
+     register: backupinfo
+
+   - name: Save the backup information.
+     copy:
+        content: '{{ backupinfo.meta.raw }}'
+        dest: '/etc/ansible/backups/{{ ansible_host }}.cfg'
+
+- name: Get PanOS config
+  collections:
+    - paloaltonetworks.panos
+  hosts: localhost
+  connection: local
+  vars:
+    - provider:
+        ip_address: [Palo Alto FW MGMT Address]
+        username: "[username]"
+        password: "[password]"
+  tasks:
+    - name: Get facts
+      panos_op:
+        provider: '{{ provider }}'
+        cmd: 'show config running'
+      register: runningconfig
+
+    - name: Save the backup information.
+      copy:
+         content: '{{ runningconfig.stdout_xml }}'
+         dest: '/etc/ansible/backups/[Palo Alto FW MGMT Address].cfg.xml'
+
+- hosts: 127.0.0.1
+  gather_facts: no
+  connection: local
+  tasks:
+   - name: Clean up XML in PanoOS backups
+     delegate_to: localhost
+     command: /etc/ansible/panos-clean.sh
+
+- hosts: 127.0.0.1
+  gather_facts: no
+  connection: local
+  tasks:
+   - name: Commit changes to Git
+     delegate_to: localhost
+     command: /etc/ansible/git-commit-backups

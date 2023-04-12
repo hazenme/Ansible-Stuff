@@ -1,0 +1,32 @@
+---
+- hosts: routers
+  gather_facts: no
+  connection: network_cli
+  tasks:
+    - name: Run show bgp all and display the results
+      block:
+      - name: Run show bgp all
+        ios_command:
+          commands:
+            - term len 0
+            - show bgp all
+        register: output
+
+      - name: print status of output
+        debug:
+          var: output.stdout_lines
+
+      - name: Save output to file
+        copy:
+          content: "{{ output.stdout[1] }}"
+          dest: "/etc/ansible/backups/{{ inventory_hostname }}-bgp-routes.cfg"
+
+
+
+- hosts: 127.0.0.1
+  gather_facts: no
+  connection: local
+  tasks:
+      - name: Commit changes to Git
+        delegate_to: localhost
+        command: /etc/ansible/git-commit-backups

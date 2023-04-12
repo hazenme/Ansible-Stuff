@@ -1,0 +1,20 @@
+#!/usr/bin/env python2.7
+import smtplib
+from email.mime.text import MIMEText
+from subprocess import check_output
+# Get the git log --stat entry of the new commit
+log = check_output(['git', 'log', '-1', '--stat', 'HEAD'])
+# Create a plaintext email message
+msg = MIMEText("Ansible Detected Changes:\n\n%s" % log)
+msg['Subject'] = 'Ansible git has updates'
+msg['From'] = 'sender@domain.tld'
+msg['To'] = 'recipient@domain.tld'
+# Send the message
+SMTP_SERVER = 'mail.domain.tld'
+SMTP_PORT = 25
+session = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+session.ehlo()
+session.starttls()
+session.ehlo()
+session.sendmail(msg['From'], msg['To'], msg.as_string())
+session.quit()

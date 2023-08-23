@@ -1,0 +1,17 @@
+---
+- hosts: cisco
+  gather_facts: no
+  connection: network_cli
+  tasks:
+    - include_role:
+        name: network-backup
+      vars:
+        network_backup_dir: '/etc/ansible/backups/'
+
+- hosts: 127.0.0.1
+  gather_facts: no
+  connection: local
+  tasks:
+      - name: Cleanup Configs
+        delegate_to: localhost
+        command: /etc/ansible/cleanup-configs
